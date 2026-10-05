@@ -12988,6 +12988,18 @@ fn object_lanes(
                     .filter(|t| *t >= 0)
                     .map(|t| (c, t as usize))
             });
+            // A path may name a light its object's program does not define (or one without
+            // phases). `TrafficLightController::state_at` reads such a light as green, so AI
+            // cars drive straight over the stop line while the lamps of the map may show red.
+            // Say so in the log: it is what a report of cars ignoring a red light needs.
+            if let Some((_, li)) = l.traffic_light {
+                if sco.traffic_lights.get(li).map_or(true, |t| t.phases.is_empty()) {
+                    log::warn!(
+                        "path {pi} of {} names traffic light {li}, which its program does not define (or gives no phases): AI cars read it as green",
+                        sco.path.display()
+                    );
+                }
+            }
             out.push(l);
         };
         match p.direction {
